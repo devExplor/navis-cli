@@ -21,6 +21,7 @@ from config import load_config
 from pathlib import Path
 from platformdirs import user_config_dir
 from prompt_toolkit import PromptSession
+import functional_manager
 
 console = Console()
 session = PromptSession()
@@ -126,12 +127,35 @@ def create(ctx, title:str):
     project_path = config["Project"]["path"]
     directory = os.path.join(project_path, title)
     os.makedirs(directory, exist_ok=True)
+
     print("Project created")
     print(directory)
 
+@click.group()
+@click.pass_context
+def function(ctx):
+    pass
 
+@function.command()
+@click.argument("projectname")
+@click.pass_context
+def openFolder(ctx, projectname:str):
+    functional_manager.openProjectFolder(ctx, projectname)
+
+@function.command()
+@click.argument("filename")
+@click.pass_context
+def fileCreate(ctx, filename:str):
+    functional_manager.createFile(ctx, filename, "FirstProject")
+
+@function.command()
+@click.argument("title")
+@click.pass_context
+def folderCreate(ctx, title:str):
+    functional_manager.createFolder(ctx, title, "FirstProject")
 
 #add Command
 cli.add_command(crud.run)
 cli.add_command(config)
 cli.add_command(project)
+cli.add_command(function)
