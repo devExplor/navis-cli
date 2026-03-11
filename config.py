@@ -19,6 +19,7 @@ username = "user"
 [Model]
 apiURL = "http://localhost:11434"
 modelName = "PLACEHOLDER"
+supportModel = "command-parser2"
 
 [Project]
 path = "/home"

@@ -8,6 +8,7 @@ import time
 import ollama
 from ollama import Client
 from ollama import chat
+from ollama import ChatResponse
 import subprocess
 from rich.panel import Panel
 from rich.console import Console
@@ -22,6 +23,7 @@ from pathlib import Path
 from platformdirs import user_config_dir
 from prompt_toolkit import PromptSession
 import functional_manager
+import json
 
 console = Console()
 session = PromptSession()
@@ -47,18 +49,23 @@ def cli(ctx) -> None:
                 if user_input.lower() in ["exit", "quit"]:
                     console.print("\n[bold red]NAVIS shutting down...[/bold red]")
                     break
-                #client = Client(
-                #     host=ctx.obj["Model"]["apiURL"],
-                #     headers={'x-some-header': 'some-value'})
-                #response = client.chat(model=ctx.obj["Model"]["modelName"], messages=[
-                #    {
-                #        'role': 'user',
-                #        'content': user_input,
-                #        },
-                #        ])
+                response: ChatResponse = chat(model=ctx.obj["Model"]["supportModel"], messages=[{
+                      'role': 'user',
+                      'content': user_input,
+                      },
+                      ])
+                print(response['message']['content'])
+                # or access fields directly from the response object
+                #print(response.message.content)
+                jsonResponse = response['message']['content']
+                cleanResponse = functional_manager.clean_json(jsonResponse)
+                data = json.loads(cleanResponse)
+                statusAICommand = functional_manager.executeAICommand(ctx, data)
+                print("NAVIS antwort: ")
+                
                 stream = chat(
                     model=ctx.obj["Model"]["modelName"],
-                    messages=[{'role': 'user', 'content': user_input}],
+                    messages=[{'role': 'user', 'content': f"Status for task in prompt: {statusAICommand}. User Prompt, anwser: " + user_input}],
                     stream=True,)
                 #print(response.message.content)
                 modelName = ctx.obj["Model"]["modelName"]
@@ -122,14 +129,14 @@ def project(ctx):
 @click.argument("title")
 @click.pass_context
 def create(ctx, title:str):
-    #project_manager.createDir(ctx, title)
-    config = ctx.obj
-    project_path = config["Project"]["path"]
-    directory = os.path.join(project_path, title)
-    os.makedirs(directory, exist_ok=True)
+    project_manager.createDir(ctx, title)
+    #config = ctx.obj
+    #project_path = config["Project"]["path"]
+    #directory = os.path.join(project_path, title)
+    #os.makedirs(directory, exist_ok=True)
 
-    print("Project created")
-    print(directory)
+    #print("Project created")
+    #print(directory)
 
 @click.group()
 @click.pass_context
