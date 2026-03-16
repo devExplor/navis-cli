@@ -24,6 +24,8 @@ from platformdirs import user_config_dir
 from prompt_toolkit import PromptSession
 import functional_manager
 import json
+import vosk
+
 
 console = Console()
 session = PromptSession()
@@ -51,21 +53,28 @@ def cli(ctx) -> None:
                     break
                 response: ChatResponse = chat(model=ctx.obj["Model"]["supportModel"], messages=[{
                       'role': 'user',
-                      'content': user_input,
+                      'content': f"Username: {ctx.obj["general"]["username"]}" +user_input,
                       },
                       ])
                 print(response['message']['content'])
                 # or access fields directly from the response object
                 #print(response.message.content)
+                    
                 jsonResponse = response['message']['content']
                 cleanResponse = functional_manager.clean_json(jsonResponse)
                 data = json.loads(cleanResponse)
                 statusAICommand = functional_manager.executeAICommand(ctx, data)
-                print("NAVIS antwort: ")
-                
-                stream = chat(
+                #print("NAVIS antwort: ")
+                if data["type"] == "none":
+                    stream = chat(
                     model=ctx.obj["Model"]["modelName"],
-                    messages=[{'role': 'user', 'content': f"Status for task in prompt: {statusAICommand}. User Prompt, anwser: " + user_input}],
+                    messages=[{'role': 'user', 'content': f"Username: {ctx.obj["general"]["username"]}. User Prompt: " + user_input}],
+                    stream=True,)
+                else:
+                    print(statusAICommand)
+                    stream = chat(
+                    model=ctx.obj["Model"]["modelName"],
+                    messages=[{'role': 'user', 'content': f"Status for task in prompt: {statusAICommand}. Username: {ctx.obj["general"]["username"]}. User Prompt: " + user_input}],
                     stream=True,)
                 #print(response.message.content)
                 modelName = ctx.obj["Model"]["modelName"]
@@ -138,6 +147,13 @@ def create(ctx, title:str):
     #print("Project created")
     #print(directory)
 
+@project.command()
+@click.argument("title")
+def setProject(title:str):
+    status = project_manager.setProject(title)
+    print(status)
+
+
 @click.group()
 @click.pass_context
 def function(ctx):
@@ -160,6 +176,11 @@ def fileCreate(ctx, filename:str):
 @click.pass_context
 def folderCreate(ctx, title:str):
     functional_manager.createFolder(ctx, title, "FirstProject")
+
+@function.command()
+@click.argument("searchterm")
+def searchFor(searchterm:str):
+    functional_manager.searchFor(searchterm)
 
 #add Command
 cli.add_command(crud.run)
